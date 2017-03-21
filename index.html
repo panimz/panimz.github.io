@@ -1,1 +1,33 @@
-Hello World
+﻿<!DOCTYPE html>
+<meta charset="utf-8">
+<header>
+    <style>
+        body {
+            background: black;
+            color: azure;
+            font-family: "Helvetica", "Arial"
+        }
+        .description {
+            text-align: center;
+        }
+        .description p {
+            padding: 0 5px;
+        }
+        #placeholder {
+            width: 500px;
+            height: 500px;
+            margin: auto auto;
+        }
+    </style>
+</header>
+<body>
+<div class="description">
+    <h2>Dynamic mesh with gradient fillings</h2>
+    <p>Created with d3.js v4 (force layout + delaunay triangulation)</p>
+    <p>Move mouse over the object to manipulate with the mesh vertices.</p>
+</div>
+<div id="placeholder"></div>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="scripts/gradient.mesh.js"></script>
+<script src="scripts/demo.js"></script>
+</body>
