@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<meta charset="utf-8">
+<header>
+    <title>Multi-layers texture demo</title>
+    <style>
+        body {
+            font: 14px Lucida Grande,sans-serif;
+        }
+        .m {
+            margin: 20px 50px;
+        }
+        .p {
+            padding: 10px 30px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"
+            integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+            crossorigin="anonymous"></script>
+</header>
+<body>
+    <div id="logo-container" style="border: solid 1px #999; width: 400px; height: 400px; margin: 20px 50px;"></div>
+    <div class="m">
+        <div class="p">
+            <form id="save-stage-form">
+                <input type="text" class="" id="stage-name-input" placeholder="stage_name" />
+                <input type="submit" value="Save current stage" />
+            </form>
+        </div>
+        <div class="p">
+            <label for="load-stage-input">Upload stage: </label><input type="file" id="load-stage-input" value="Upload a stage"/>
+        </div>
+        <div class="p" id="tr_queue">
+            <h3>Transition queue</h3>
+            <input type="text" id="tr_state_name"/>
+            <button id="tr_add">Add current stage</button>
+            <button id="tr_run">Run</button>
+            <button id="tr_remove">Clean</button>
+            <ul></ul>
+        </div>
+    </div>
+    <script src="dist/shlogo.js"></script>
+    <script src="src/demo/controlKit.js"></script>
+    <script src="src/demo/fileSaver.js"></script>
+    <script src="src/demo/transitionQueue.js"></script>
+    <script src="src/demo/prototypingPage.js"></script>
+</body>
