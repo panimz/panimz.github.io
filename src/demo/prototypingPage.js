@@ -14,6 +14,11 @@
             item.alpha = (opts.alpha);
         }
     };
+    var blurSetter = function (item, opts) {
+        return function () {
+            item.blur = (opts.blur);
+        }
+    };
     var scaleSetter = function (item, opts) {
         return function () {
             var curr = (opts.scale * baseShapeCoeff);
@@ -33,11 +38,22 @@
             item.polarCoords = { radius: radius, angle: angle};
         }
     }
+    var layerAnimationSetter = function(item, opts) {
+        return function () {
+            item.localPace = opts.pace.local;
+            item.centerPace = opts.pace.center;
+        }
+    }
     // helpers
 
     var container = document.getElementById("logo-container");
     var size = Math.min(container.clientWidth, container.clientHeight);
-    var app = new PIXI.Application({ transparent: true, width: size, height: size });
+    var app = new PIXI.Application({
+        transparent: true,
+        width: size, 
+        height: size,
+        //forceCanvas: true,
+    });
     app.renderer.backgroundColor = 0xFFFFFF;
 
     container.appendChild(app.view);
@@ -48,7 +64,7 @@
         setupMesh(mesh);
 
         app.ticker.add(function (delta) {
-            texture.update();
+            texture.update(delta);
             mesh.update(delta);
         });
 
@@ -375,6 +391,8 @@
             opts[layer] = {
                 percentRange: [0, 100],
                 scaleRange: [0, 500],
+                blurRange: [0, 20],
+                blur: curr.blur,
                 alpha: curr.alpha,
                 color: curr.color.toString(),
                 rotation: rad2percents * curr.rotation,
@@ -384,12 +402,19 @@
                     radius: coords.radius / baseShapeCoeff,
                     percentRange: [0, 100]
                 },
+                pace: {
+                    center: curr.centerPace,
+                    local: curr.localPace, 
+                    range: [-3000, 3000]
+                },
             };
             var updateColor = colorSetter(curr, opts[layer]);
             var updateAlpha = alphaSetter(curr, opts[layer]);
+            var updateBlur = blurSetter(curr, opts[layer]);
             var updateScale = scaleSetter(curr, opts[layer]);
             var updateRotation = rotationSetter(curr, opts[layer]);
             var updatePolarCoords = polarPosSetter(curr, opts[layer]);
+            var updateAnimation = layerAnimationSetter(curr, opts[layer]);
             var sectionName = "Layer " + layer;
             var section = gui.addGroup({label: sectionName, enable: show});
             section.addColor(opts[layer],
@@ -414,16 +439,35 @@
                    onChange: updateScale,
                    onFinish: updateScale,
                    step: 1,
-               });
+            });
             section
+               .addSlider(opts[layer], "blur", "blurRange",
+               {
+                    label: "Blur",
+                    onChange: updateBlur,
+                    onFinish: updateBlur,
+                    step: 1,
+                });
+            var selfRotation = section.addSubGroup({ label: "Self rotation" });
+            selfRotation
                .addSlider(opts[layer], "rotation", "percentRange",
                {
                    label: "Rotation",
                    onChange: updateRotation,
                    onFinish: updateRotation,
                    step: 1,
-               });
-            section
+                });
+       
+            selfRotation
+              .addSlider(opts[layer].pace, "local", "range",
+              {
+                label: "Pace",
+                onChange: updateAnimation,
+                onFinish: updateAnimation,
+                step: 1,
+            });
+            var centerRotation = section.addSubGroup({ label: "Centered rotation" });
+            centerRotation
                .addSlider(opts[layer].polarCoords, "radius", "percentRange",
                {
                    label: "Radius",
@@ -431,14 +475,22 @@
                    onFinish: updatePolarCoords,
                    step: 1,
                });
-            section
+            centerRotation
               .addSlider(opts[layer].polarCoords, "angle", "percentRange",
               {
                   label: "Angle",
                   onChange: updatePolarCoords,
                   onFinish: updatePolarCoords,
                   step: 1,
-              });
+                });
+            centerRotation
+              .addSlider(opts[layer].pace, "center", "range",
+              {
+                label: "Pace",
+                onChange: updateAnimation,
+                onFinish: updateAnimation,
+                step: 1,
+            });
             if (show) { show = false; }
         }
         currSettings["texture"] = opts;
