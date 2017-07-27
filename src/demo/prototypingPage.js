@@ -52,7 +52,7 @@
         transparent: true,
         width: size, 
         height: size,
-        //forceCanvas: true,
+        forceCanvas: false,
     });
     app.renderer.backgroundColor = 0xFFFFFF;
 
@@ -391,7 +391,7 @@
             opts[layer] = {
                 percentRange: [0, 100],
                 scaleRange: [0, 500],
-                blurRange: [0, 20],
+                blurRange: [0, 50],
                 blur: curr.blur,
                 alpha: curr.alpha,
                 color: curr.color.toString(),
