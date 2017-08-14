@@ -1,5 +1,15 @@
 ﻿(function(global) {
 
+    var easeTypes = [
+        "easeLinear",
+        "easeQuad",
+        "easeSin",
+        "easeExp",
+        "easeCircle",
+        "easeBounce",
+        "easeElastic"
+    ];
+
     var transitionComponent = function (containerId, logo) 
     {
         this.counter = 0;
@@ -37,7 +47,11 @@
         }
         var currentState = this.states[nextOrder-1];
         var nextState = this.states[nextOrder];
-        this.logo.transitTo(nextState.state, currentState.duration, currentState.delay);
+        this.logo.transitTo(
+            nextState.state,
+            currentState.duration,
+            currentState.delay,
+            currentState.easeType);
         nextOrder = nextOrder + 1;
         var self = this;
         if (nextOrder < this.states.length) {
@@ -63,7 +77,8 @@
             name: name,
             state: settings,
             duration: 600,
-            delay: 600
+            delay: 600,
+            easeType: "easeLinear"
         };
         this.states.push(state);
         this.renderState(state);
@@ -90,7 +105,7 @@
         var $item = $("<li class='state'/>");
         $item.append($("<p/>").text(state.name));
 
-        var $delay = $item.append($("<p/>"));
+        var $delay = $("<p/>").appendTo($item);
         $delay.append($("<text/>").text("State duration"));
         $delay.append(
             $('<input type="number" name="tr_delay">')
@@ -99,7 +114,7 @@
                     state.delay = parseInt($(this).val());
                 }));
 
-        var $duration = $item.append($("<p/>"));
+        var $duration = $("<p/>").appendTo($item);
         $duration.append($("<text/>").text("Transition duration"));
         $duration.append(
             $('<input type="number" name="tr_duration">')
@@ -108,11 +123,26 @@
                 state.duration = parseInt($(this).val());
             }));
 
+        var $easer = $("<p>").appendTo($item);
+        $easer.append($("<text/>").text("Ease function"));
+        var $select = $("<select>").appendTo($easer);
+        $select.on("change",
+            function() {
+                state.easeType = $(this).val();
+            });
+        for (var i = 0; i < easeTypes.length; i++) {
+            var curr = easeTypes[i];
+            $select
+                .append($("<option>")
+                .attr("value", curr)
+                .text(curr));
+        }
         $item.append($("<button>")
             .text("Remove")
             .on("click", function () {
                 self.removeState(state.id, $item);
             }));
+
         $item.data("id", state.id);
         this.$list.append($item);
     }

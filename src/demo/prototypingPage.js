@@ -54,6 +54,7 @@
         height: size,
         forceCanvas: false,
     });
+
     app.renderer.backgroundColor = 0xFFFFFF;
 
     container.appendChild(app.view);
@@ -61,7 +62,6 @@
 
     function init() {
         var mesh = new SHLogo.LogoMesh(texture, app, size);
-        setupMesh(mesh);
 
         app.ticker.add(function (delta) {
             texture.update(delta);
@@ -70,16 +70,6 @@
 
         setupGui(mesh);
         setupTransitionComponent(mesh);
-    }
-
-    function setupMesh(mesh) {
-        var range = { x: 0, y: 0 };
-        var speed = { x: 0, y: 0 };
-        mesh.setDeformer("none", range, speed);
-
-        var distanceRange = { min: 0, range: 0 };
-        var speedRange = { min: 0, range: 0 };
-        mesh.setShapeDeformer(distanceRange, speedRange);
     }
 
     function setupTransitionComponent(mesh) {
@@ -98,90 +88,64 @@
     }
 
     function setupMainGui(guiContainer, currSettings, mesh) {
-        setupMeshAnimGui(guiContainer, currSettings, mesh);
-        setupOutlineShapeGui(guiContainer, currSettings, mesh.getShape());
-        return guiContainer;
-    }
-
-    function setupMeshAnimGui(guiContainer, currSettings, mesh) {
         var guiPanel = guiContainer.addPanel({
-            label: "Mesh Settings",
+            label: "Mesh & Shape",
             align: "right",
             fixed: true,
             width: 270,
         });
+        setupMeshAnimGui(guiPanel, currSettings, mesh);
+        setupOutlineShapeGui(guiPanel, currSettings, mesh.getShape());
+        return guiContainer;
+    }
+
+    function setupMeshAnimGui(guiPanel, currSettings, mesh) {
         var opts = {
             movementTypes: ["none", "wave", "shake"],
             movement: "none",
-            range: { x: 0, y: 0, range: [0, 3]},
-            pace: { x: 0, y: 0, range: [0, 3000] },
-            rotationRange: [0, 150],
-            rotation: 0
+            devRange: [0, 3],
+            paceRange: [0, 6000],
+            xRange: 0,
+            yRange: 0,
+            xPace: 0,
+            yPace: 0
         };
-        var setDeformer = function () {
-            mesh.setDeformer(opts.movement, opts.range, opts.pace);
-        };
-        var meshSection = guiPanel.addGroup({ label: "Mesh transformation"});
-        var deformersSection = meshSection.addSubGroup({label: "Deformations"});
-        deformersSection.addSelect(opts,
-            "movementTypes",
-            {
-                label: "Type",
-                selectTarget: "movement",
-                onChange: function(idx) {
-                    opts.movement = opts.movementTypes[idx];
-                    setDeformer();
-                },
-            });
-        deformersSection
-            .addSlider(opts.range, "x", "range",
+        var setDeformer = function () { mesh.movement.setState(opts);};
+        var meshSection = guiPanel.addGroup({ label: "Mesh Animation Settings" });
+        meshSection
+            .addSlider(opts, "xRange", "devRange",
             {
                 label: "x range",
                 onFinish: setDeformer,
                 step: 0.1,
             });
-        deformersSection
-            .addSlider(opts.pace, "x", "range",
+        meshSection
+            .addSlider(opts, "xPace", "paceRange",
             {
                 label: "x pace (ms)",
                 onFinish: setDeformer,
                 step: 10,
             });
-        deformersSection
-            .addSlider(opts.range, "y", "range",
+        meshSection
+            .addSlider(opts, "yRange", "devRange",
             {
                 label: "y range",
                 onFinish: setDeformer,
                 step: 0.1,
             });
-        deformersSection
-            .addSlider(opts.pace, "y", "range",
+        meshSection
+            .addSlider(opts, "yPace", "paceRange",
             {
                 label: "y pace (ms)",
                 onFinish: setDeformer,
-                step: 10,
+                step: 10
             });
-        var rotationSection = meshSection.addSubGroup({label: "Mesh rotation"});
-        rotationSection.addSlider(opts, "rotation", "rotationRange",
-            {
-                label: "Pace (??)",
-                onFinish: function () {
-                    var speed = opts.rotation / 1000;
-                    mesh.queueRotation(speed);
-                },
-                step: 1,
-            });
-        meshSection.addButton("Reset mesh",
-            function() {
-                if (mesh) {
-                    mesh.reset();
-                }
-            });
+       
         // store mesh settings in the root object
         currSettings["mesh"] = opts;
     }
 
-    function setupOutlineShapeGui(guiContainer, currSettings, shape) {
+    function setupOutlineShapeGui(guiPanel, currSettings, shape) {
         // callback builders
         var sizeSetter = function (bubble, opts) {
             return function () {
@@ -203,18 +167,8 @@
                 point.rotation = opts.rotation;
             }
         }
-        var directionSetter = function(point, opts) {
-            return function() {
-                point.isClockwise = opts.isClockwise;
-            }
-        }
         // setup shape section of the control panel
-        var outlineSection = guiContainer.addPanel({
-            label: "Shape Settings",
-            align: "right",
-            fixed: true,
-            width: 270,
-        });
+        var outlineSection = guiPanel.addGroup({ label: "Shape Settings" });
         var shapeBase = shape.getBaseShape();
         var opts = {
             sizeRange: [0, 110],
@@ -263,24 +217,22 @@
                 size: bubble.size,
                 sizeRange: [0, 100],
                 pivot: {
-                    durationRange: [0, 50000],
+                    paceRange: [-60000, 60000],
                     percentRange: [0, 100],
                     orbit: pivot.orbit,
                     pace: pivot.pace,
-                    rotation: pivot.rotation,
-                    isClockwise: pivot.isClockwise,
+                    rotation: pivot.rotation
                 },
                 bubble: {
-                    durationRange: [0, 50000],
+                    paceRange: [-60000, 60000],
                     percentRange: [0, 100],
                     orbit: bubble.orbit,
                     pace: bubble.pace,
-                    rotation: bubble.rotation,
-                    isClockwise: bubble.isClockwise
+                    rotation: bubble.rotation
                 }
             }
             var folderLabel = "Bubble #" + (i + 1);
-            var folder = outlineSection.addGroup({label: folderLabel, enable: false});
+            var folder = guiPanel.addGroup({ label: folderLabel, enable: false });
             var updateSize = sizeSetter(bubble, opts[name]);
             folder
                 .addSlider(opts[name],
@@ -297,7 +249,6 @@
             var updatePivotOrbit = orbitSetter(bubble.pivot, opts[name].pivot);
             var updatePivotPace = paceSetter(bubble.pivot, opts[name].pivot);
             var updatePivotRotation = rotationSetter(bubble.pivot, opts[name].pivot);
-            var updatePivotDirection = directionSetter(bubble.pivot, opts[name].pivot);
             pivotFolder
                 .addSlider(opts[name].pivot, "rotation", "percentRange",
                 {
@@ -315,25 +266,17 @@
                     step: 1,
                 });
             pivotFolder
-                .addSlider(opts[name].pivot, "pace", "durationRange",
+                .addSlider(opts[name].pivot, "pace", "paceRange",
                 {
                     label: "Pace (ms)",
                     onChange: updatePivotPace,
                     onFinish: updatePivotPace,
                     step: 1,
                 });
-            pivotFolder.addCheckbox(opts[name].pivot,
-                "isClockwise",
-                {
-                    label: "Is Clockwise",
-                    onChange: updatePivotDirection
-                });
-            //
             var bubbleFolder = folder.addSubGroup({label: "Bubble settings"});
             var updateOrbit = orbitSetter(bubble, opts[name].bubble);
             var updatePace = paceSetter(bubble, opts[name].bubble);
             var updateInitialRotation = rotationSetter(bubble, opts[name].bubble);
-            var updateDirection = directionSetter(bubble, opts[name].bubble);
             bubbleFolder
                 .addSlider(opts[name].bubble, "rotation", "percentRange",
                 {
@@ -351,18 +294,12 @@
                     step: 1,
                 });
             bubbleFolder
-                .addSlider(opts[name].bubble, "pace", "durationRange",
+                .addSlider(opts[name].bubble, "pace", "paceRange",
                 {
                     label: "Pace (ms)",
                     onChange: updatePace,
                     onFinish: updatePace,
                     step: 1,
-                });
-            bubbleFolder.addCheckbox(opts[name].bubble,
-                "isClockwise",
-                {
-                    label: "Is Clockwise",
-                    onChange: updateDirection
                 });
         }
         currSettings["shape"] = opts;
@@ -405,7 +342,7 @@
                 pace: {
                     center: curr.centerPace,
                     local: curr.localPace, 
-                    range: [-3000, 3000]
+                    range: [-60000, 60000]
                 },
             };
             var updateColor = colorSetter(curr, opts[layer]);
@@ -537,13 +474,7 @@
         guiContainer._panels.forEach(function(panel) {
             panel._groups.forEach(function(group) {
                 group._components.forEach(function (component) {
-                    if (typeof (component._applySelected) === "function") {
-                        var idx = component._values.indexOf(originSettings.mesh.movement);
-                        component.setValue(idx);
-                    }
-                    else if (typeof (component.applyValue) === "function") {
-                        component.applyValue();
-                    }
+                     component.applyValue();
                 });
             });
         });
@@ -555,7 +486,6 @@
             if (typeof (item) !== "object") {
                 return;
             }
-
             if (item.rotation) {
                 item.rotation *= rad2percents;
             }
