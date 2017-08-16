@@ -3,6 +3,7 @@
     var percents2rad = (Math.PI * 2) / 100;
     var rad2percents = 100.0 / (Math.PI * 2);
 
+    var sizeRoundingCoeff = 1.01;
     var baseShapeCoeff = 1 / 100;
     var colorSetter = function (item, opts) {
         return function () {
@@ -34,8 +35,9 @@
     var polarPosSetter = function (item, opts) {
         return function () {
             var angle = percents2rad * opts.polarCoords.angle;
-            var radius = opts.polarCoords.radius * baseShapeCoeff;
-            item.polarCoords = { radius: radius, angle: angle};
+            var radius = opts.polarCoords.radius * baseShapeCoeff * 0.5;
+            item.polarCoords = { radius: radius, angle: angle };
+            console.log(item.polarCoords);
         }
     }
     var layerAnimationSetter = function(item, opts) {
@@ -101,8 +103,6 @@
 
     function setupMeshAnimGui(guiPanel, currSettings, mesh) {
         var opts = {
-            movementTypes: ["none", "wave", "shake"],
-            movement: "none",
             devRange: [0, 3],
             paceRange: [0, 6000],
             xRange: 0,
@@ -174,7 +174,7 @@
             sizeRange: [0, 110],
             size: shapeBase.size,
             isApplied: true,
-            antialiasingRange: [0, 10],
+            antialiasingRange: [0, 15],
             antialiasing: shape.getOutlineAntialiasing(),
         };
         var updateBshSize = sizeSetter(shapeBase, opts);
@@ -310,8 +310,8 @@
         var opts = {};
         var layers = texture.layers;
         var shape = mesh.getShape();
-        var sizeRoundingCoeff = 1.01;
         // specify baseShapeCoeff
+        console.log(shape.getBaseShapeSize());
         baseShapeCoeff = (shape.getBaseShapeSize() * sizeRoundingCoeff) / 100;
         
         // setup control panel
@@ -336,7 +336,7 @@
                 scale: curr.scale / baseShapeCoeff,
                 polarCoords: {
                     angle: rad2percents * coords.angle,
-                    radius: coords.radius / baseShapeCoeff,
+                    radius: coords.radius / (0.5 * baseShapeCoeff),
                     percentRange: [0, 100]
                 },
                 pace: {
@@ -472,9 +472,12 @@
         mergeDeep(originSettings, stageSettings);
         rescaleSettings(originSettings);
         guiContainer._panels.forEach(function(panel) {
-            panel._groups.forEach(function(group) {
+            panel._groups.forEach(function (group) {
                 group._components.forEach(function (component) {
-                     component.applyValue();
+                    var key = component._targetKey || component._key;
+                    var curr = component._obj[key];
+                    component.setValue(curr);
+                    component.applyValue();
                 });
             });
         });
@@ -494,7 +497,7 @@
             }
             if (item.polarCoords) {
                 item.polarCoords.angle *= rad2percents;
-                item.polarCoords.radius /= baseShapeCoeff;
+                item.polarCoords.radius /= baseShapeCoeff * 0.5;
             }
         }
     }
