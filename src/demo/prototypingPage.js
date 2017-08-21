@@ -28,8 +28,8 @@
     };
     var rotationSetter = function (item, opts) {
         return function () {
-            var rotation = percents2rad * opts.rotation;
-            item.rotation = (rotation);
+            var rotation = percents2rad * opts.initRotation;
+            item.initRotation = (rotation);
         }
     };
     var polarPosSetter = function (item, opts) {
@@ -37,7 +37,6 @@
             var angle = percents2rad * opts.polarCoords.angle;
             var radius = opts.polarCoords.radius * baseShapeCoeff * 0.5;
             item.polarCoords = { radius: radius, angle: angle };
-            console.log(item.polarCoords);
         }
     }
     var layerAnimationSetter = function(item, opts) {
@@ -102,16 +101,31 @@
     }
 
     function setupMeshAnimGui(guiPanel, currSettings, mesh) {
+        var currMovement = mesh.getState().mesh;
         var opts = {
+            movementTypes: ["none", "wave", "shake"],
+            movement: -1,
             devRange: [0, 3],
             paceRange: [0, 6000],
-            xRange: 0,
-            yRange: 0,
-            xPace: 0,
-            yPace: 0
+            xRange: currMovement.xRange,
+            yRange: currMovement.yRange,
+            xPace: currMovement.xPace,
+            yPace: currMovement.yPace
         };
+        opts.movement = opts.movementTypes.indexOf(currMovement.movement);
         var setDeformer = function () { mesh.movement.setState(opts);};
         var meshSection = guiPanel.addGroup({ label: "Mesh Animation Settings" });
+        meshSection
+            .addSelect(opts,
+                "movementTypes",
+                {
+                    label: "Type",
+                    target: "movement",
+                    onChange: function (idx) {
+                        opts.movement = opts.movementTypes[idx];
+                        setDeformer();
+                    }
+            });
         meshSection
             .addSlider(opts, "xRange", "devRange",
             {
@@ -311,7 +325,6 @@
         var layers = texture.layers;
         var shape = mesh.getShape();
         // specify baseShapeCoeff
-        console.log(shape.getBaseShapeSize());
         baseShapeCoeff = (shape.getBaseShapeSize() * sizeRoundingCoeff) / 100;
         
         // setup control panel
@@ -321,8 +334,8 @@
             fixed: true,
             width: 200,
         });
-        var show = true;
-        for (var layer in layers) {
+        for (var layer in layers)
+        {
             var curr = layers[layer];
             var coords = curr.polarCoords;
             opts[layer] = {
@@ -332,7 +345,7 @@
                 blur: curr.blur,
                 alpha: curr.alpha,
                 color: curr.color.toString(),
-                rotation: rad2percents * curr.rotation,
+                initRotation: rad2percents * curr.initRotation,
                 scale: curr.scale / baseShapeCoeff,
                 polarCoords: {
                     angle: rad2percents * coords.angle,
@@ -353,7 +366,10 @@
             var updatePolarCoords = polarPosSetter(curr, opts[layer]);
             var updateAnimation = layerAnimationSetter(curr, opts[layer]);
             var sectionName = "Layer " + layer;
-            var section = gui.addGroup({label: sectionName, enable: show});
+            var section = gui.addGroup({
+                label: sectionName,
+                enable: false
+            });
             section.addColor(opts[layer],
                 "color",
                 {
@@ -387,9 +403,9 @@
                 });
             var selfRotation = section.addSubGroup({ label: "Self rotation" });
             selfRotation
-               .addSlider(opts[layer], "rotation", "percentRange",
+               .addSlider(opts[layer], "initRotation", "percentRange",
                {
-                   label: "Rotation",
+                   label: "Init Angle",
                    onChange: updateRotation,
                    onFinish: updateRotation,
                    step: 1,
@@ -415,7 +431,7 @@
             centerRotation
               .addSlider(opts[layer].polarCoords, "angle", "percentRange",
               {
-                  label: "Angle",
+                  label: "Init Angle",
                   onChange: updatePolarCoords,
                   onFinish: updatePolarCoords,
                   step: 1,
@@ -428,7 +444,6 @@
                 onFinish: updateAnimation,
                 step: 1,
             });
-            if (show) { show = false; }
         }
         currSettings["texture"] = opts;
         return gui;
@@ -476,8 +491,12 @@
                 group._components.forEach(function (component) {
                     var key = component._targetKey || component._key;
                     var curr = component._obj[key];
+                    if (component.hasOwnProperty("_selectedIndex")) {
+                        console.log(component.selectTarget);
+                        console.log(key + " " + curr);
+                        console.log(component);
+                    }
                     component.setValue(curr);
-                    component.applyValue();
                 });
             });
         });

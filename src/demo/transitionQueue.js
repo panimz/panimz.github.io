@@ -95,7 +95,6 @@
             }
         }
         this.states.splice(stateId, 1);
-        console.log(this.states);
         $(el).remove();
         this.updateControlStates();
     }
