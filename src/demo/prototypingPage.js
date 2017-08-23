@@ -53,7 +53,7 @@
         transparent: true,
         width: size, 
         height: size,
-        forceCanvas: false,
+        forceCanvas: true,
     });
 
     app.renderer.backgroundColor = 0xFFFFFF;
@@ -188,27 +188,14 @@
             sizeRange: [0, 110],
             size: shapeBase.size,
             isApplied: true,
-            antialiasingRange: [0, 15],
-            antialiasing: shape.getOutlineAntialiasing(),
         };
         var updateBshSize = sizeSetter(shapeBase, opts);
-        var updateAntialiasing = function() {
-            shape.setOutlineAntialiasing(opts.antialiasing);
-        }
         outlineSection
             .addSlider(opts, "size", "sizeRange",
             {
                 label: "Size",
                 onChange: updateBshSize,
                 onFinish: updateBshSize,
-                step: 1,
-            });
-        outlineSection
-            .addSlider(opts, "antialiasing", "antialiasingRange",
-            {
-                label: "Antialiasing",
-                onChange: updateAntialiasing,
-                onFinish: updateAntialiasing,
                 step: 1,
             });
         outlineSection.addCheckbox(opts,
@@ -491,11 +478,6 @@
                 group._components.forEach(function (component) {
                     var key = component._targetKey || component._key;
                     var curr = component._obj[key];
-                    if (component.hasOwnProperty("_selectedIndex")) {
-                        console.log(component.selectTarget);
-                        console.log(key + " " + curr);
-                        console.log(component);
-                    }
                     component.setValue(curr);
                 });
             });
