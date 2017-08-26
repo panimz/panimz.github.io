@@ -53,7 +53,7 @@
         transparent: true,
         width: size, 
         height: size,
-        forceCanvas: true,
+        forceCanvas: false,
     });
 
     app.renderer.backgroundColor = 0xFFFFFF;
@@ -173,7 +173,7 @@
         };
         var paceSetter = function (point, opts) {
             return function () {
-                point.pace = opts.pace;
+                point.pace = opts.pace; 
             }
         };
         var rotationSetter = function (point, opts) {
@@ -447,6 +447,7 @@
             var blob = new Blob([plainSettings], { type:"application:json" });
             var fileName = (stageName.value || stageName.placeholder) + ".json";
             saveAs(blob, fileName);
+            console.log("stage has been saved");
         }, false);
     }
    
@@ -467,18 +468,23 @@
                 updateGui(guiContainer, originSettings, stageSettings);
             };
             reader.readAsText(stageFile);
+            console.log("stage has been uploadd");
         });
     }
 
     function updateGui(guiContainer, originSettings, stageSettings) {
-        mergeDeep(originSettings, stageSettings);
         rescaleSettings(originSettings);
+        mergeSettings(originSettings, stageSettings);
         guiContainer._panels.forEach(function(panel) {
             panel._groups.forEach(function (group) {
                 group._components.forEach(function (component) {
                     var key = component._targetKey || component._key;
                     var curr = component._obj[key];
-                    component.setValue(curr);
+                    if (typeof (component._applySelected) === "function") {
+                        component.setValue(curr);
+                    } else {
+                        component.applyValue();
+                    }
                 });
             });
         });
@@ -493,6 +499,9 @@
             if (item.rotation) {
                 item.rotation *= rad2percents;
             }
+            if (item.initRotation) {
+                item.initRotation *= rad2percents;
+            }
             if (item.scale) {
                 item.scale /= baseShapeCoeff;
             }
@@ -501,6 +510,56 @@
                 item.polarCoords.radius /= baseShapeCoeff * 0.5;
             }
         }
+    }
+
+    function mergeSettings(target, source) {
+        mergeMesh(target.mesh, source.mesh);
+        mergeShape(target.shape, source.shape);
+        mergeTexture(target.texture, source.texture);
+    }
+
+    function mergeMesh(target, source) {
+        if (!target || !source) {
+            return;
+        }
+        for (var key in source) {
+            if (target.hasOwnProperty(key)) {
+                target[key] = source[key];
+            }
+        }
+    }
+
+    function mergeShape(target, source) {
+        target.isApplied = true;
+        target.size = source.mainSize;
+        for (var i = 0; i < source.bubbles.length; i++) {
+            var key = "bubble" + i;
+            if (!target.hasOwnProperty(key)) { continue; }
+            var bubble = source.bubbles[i];
+            mergeDeep(target[key], bubble);
+        }
+    }
+
+    function mergeTexture(target, source) {
+        for (var layer in target) {
+            if (!source.hasOwnProperty(layer)) {
+                continue;
+            }
+            var currSource = source[layer];
+            var currTarget = target[layer];
+            for (var key in currTarget) {
+                if (!currSource.hasOwnProperty(key)) {
+                    continue;
+                }
+                currTarget[key] = currSource[key];
+            }
+            currTarget.pace.center = convertSpeedPace(currSource.centerSpeed);
+            currTarget.pace.local = convertSpeedPace(currSource.localSpeed);
+        }
+    }
+
+    function convertSpeedPace(origin) {
+        return !origin ? 0 : (100 * Math.PI) / (origin * 3);
     }
 
 })();
