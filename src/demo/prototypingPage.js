@@ -5,46 +5,7 @@
 
     var sizeRoundingCoeff = 1.01;
     var baseShapeCoeff = 1 / 100;
-    var colorSetter = function (item, opts) {
-        return function () {
-            item.color = (opts.color);
-        }
-    };
-    var alphaSetter = function (item, opts) {
-        return function () {
-            item.alpha = (opts.alpha);
-        }
-    };
-    var blurSetter = function (item, opts) {
-        return function () {
-            item.blur = (opts.blur);
-        }
-    };
-    var scaleSetter = function (item, opts) {
-        return function () {
-            var curr = (opts.scale * baseShapeCoeff);
-            item.scale = (curr);
-        }
-    };
-    var rotationSetter = function (item, opts) {
-        return function () {
-            var rotation = percents2rad * opts.initRotation;
-            item.initRotation = (rotation);
-        }
-    };
-    var polarPosSetter = function (item, opts) {
-        return function () {
-            var angle = percents2rad * opts.polarCoords.angle;
-            var radius = opts.polarCoords.radius * baseShapeCoeff * 0.5;
-            item.polarCoords = { radius: radius, angle: angle };
-        }
-    }
-    var layerAnimationSetter = function(item, opts) {
-        return function () {
-            item.localPace = opts.pace.local;
-            item.centerPace = opts.pace.center;
-        }
-    }
+  
     // helpers
 
     var container = document.getElementById("logo-container");
@@ -178,7 +139,7 @@
         };
         var rotationSetter = function (point, opts) {
             return function () {
-                point.rotation = opts.rotation;
+                point.initRotation = opts.initRotation;
             }
         }
         // setup shape section of the control panel
@@ -222,14 +183,14 @@
                     percentRange: [0, 100],
                     orbit: pivot.orbit,
                     pace: pivot.pace,
-                    rotation: pivot.rotation
+                    initRotation: pivot.initRotation
                 },
                 bubble: {
                     paceRange: [-60000, 60000],
                     percentRange: [0, 100],
                     orbit: bubble.orbit,
                     pace: bubble.pace,
-                    rotation: bubble.rotation
+                    initRotation: bubble.initRotation
                 }
             }
             var folderLabel = "Bubble #" + (i + 1);
@@ -251,9 +212,9 @@
             var updatePivotPace = paceSetter(bubble.pivot, opts[name].pivot);
             var updatePivotRotation = rotationSetter(bubble.pivot, opts[name].pivot);
             pivotFolder
-                .addSlider(opts[name].pivot, "rotation", "percentRange",
+                .addSlider(opts[name].pivot, "initRotation", "percentRange",
                 {
-                    label: "Initial rotation",
+                    label: "Init rotation",
                     onChange: updatePivotRotation,
                     onFinish: updatePivotRotation,
                     step: 1,
@@ -277,13 +238,13 @@
             var bubbleFolder = folder.addSubGroup({label: "Bubble settings"});
             var updateOrbit = orbitSetter(bubble, opts[name].bubble);
             var updatePace = paceSetter(bubble, opts[name].bubble);
-            var updateInitialRotation = rotationSetter(bubble, opts[name].bubble);
+            var updateInitRotation = rotationSetter(bubble, opts[name].bubble);
             bubbleFolder
-                .addSlider(opts[name].bubble, "rotation", "percentRange",
+                .addSlider(opts[name].bubble, "initRotation", "percentRange",
                 {
-                    label: "Initial rotation",
-                    onChange: updateInitialRotation,
-                    onFinish: updateInitialRotation,
+                    label: "Init rotation",
+                    onChange: updateInitRotation,
+                    onFinish: updateInitRotation,
                     step: 1,
                 });
             bubbleFolder
@@ -308,6 +269,55 @@
 
     function setupLayersGui(guiContainer, currSettings, mesh) {
 
+        //
+        var colorSetter = function (item, opts) {
+            return function () {
+                item.color = (opts.color);
+            }
+        };
+        var alphaSetter = function (item, opts) {
+            return function () {
+                item.alpha = (opts.alpha);
+            }
+        };
+        var blurSetter = function (item, opts) {
+            return function () {
+                item.blur = (opts.blur);
+            }
+        };
+        var scaleSetter = function (item, opts) {
+            return function () {
+                var curr = (opts.scale * baseShapeCoeff);
+                item.scale = (curr);
+            }
+        };
+        var rotationSetter = function (item, opts) {
+            return function () {
+                var rotation = percents2rad * opts.initRotation;
+                item.initRotation = (rotation);
+            }
+        };
+        var paceSetter = function(item, opts) {
+            return function () {
+                item.pace = (opts.pace);
+            }
+        }
+        var pivotOrbitSetter = function (point, opts) {
+            return function () {
+                point.orbit = opts.orbit;
+            }
+        };
+        var pivotPaceSetter = function (point, opts) {
+            return function () {
+                point.pace = opts.pace; 
+            }
+        };
+        var pivotRotationSetter = function (point, opts) {
+            return function () {
+                point.initRotation = opts.initRotation;
+            }
+        }
+
         var opts = {};
         var layers = texture.layers;
         var shape = mesh.getShape();
@@ -324,34 +334,29 @@
         for (var layer in layers)
         {
             var curr = layers[layer];
-            var coords = curr.polarCoords;
             opts[layer] = {
                 percentRange: [0, 100],
+                paceRange: [-60000, 60000],
                 scaleRange: [0, 500],
                 blurRange: [0, 50],
                 blur: curr.blur,
                 alpha: curr.alpha,
                 color: curr.color.toString(),
-                initRotation: rad2percents * curr.initRotation,
                 scale: curr.scale / baseShapeCoeff,
-                polarCoords: {
-                    angle: rad2percents * coords.angle,
-                    radius: coords.radius / (0.5 * baseShapeCoeff),
-                    percentRange: [0, 100]
-                },
-                pace: {
-                    center: curr.centerPace,
-                    local: curr.localPace, 
-                    range: [-60000, 60000]
-                },
+                initRotation: rad2percents * curr.initRotation,
+                pace: curr.pace,
+                pivot: {
+                    paceRange: [-60000, 60000],
+                    percentRange: [0, 100],
+                    orbit: curr.pivot.orbit,
+                    pace: curr.pivot.pace,
+                    initRotation: curr.pivot.initRotation
+                }
             };
             var updateColor = colorSetter(curr, opts[layer]);
             var updateAlpha = alphaSetter(curr, opts[layer]);
             var updateBlur = blurSetter(curr, opts[layer]);
             var updateScale = scaleSetter(curr, opts[layer]);
-            var updateRotation = rotationSetter(curr, opts[layer]);
-            var updatePolarCoords = polarPosSetter(curr, opts[layer]);
-            var updateAnimation = layerAnimationSetter(curr, opts[layer]);
             var sectionName = "Layer " + layer;
             var section = gui.addGroup({
                 label: sectionName,
@@ -389,6 +394,8 @@
                     step: 1,
                 });
             var selfRotation = section.addSubGroup({ label: "Self rotation" });
+            var updateRotation = rotationSetter(curr, opts[layer]);
+            var updateSelfPace = paceSetter(curr, opts[layer]);
             selfRotation
                .addSlider(opts[layer], "initRotation", "percentRange",
                {
@@ -399,38 +406,41 @@
                 });
        
             selfRotation
-              .addSlider(opts[layer].pace, "local", "range",
+              .addSlider(opts[layer], "pace", "paceRange",
               {
                 label: "Pace",
-                onChange: updateAnimation,
-                onFinish: updateAnimation,
+                onChange: updateSelfPace,
+                onFinish: updateSelfPace,
                 step: 1,
             });
             var centerRotation = section.addSubGroup({ label: "Centered rotation" });
+            var updatePivotOrbit = pivotOrbitSetter(curr.pivot, opts[layer].pivot);
+            var updatePivotPace = pivotPaceSetter(curr.pivot, opts[layer].pivot);
+            var updatePivotRotation = pivotRotationSetter(curr.pivot, opts[layer].pivot);
             centerRotation
-               .addSlider(opts[layer].polarCoords, "radius", "percentRange",
-               {
-                   label: "Radius",
-                   onChange: updatePolarCoords,
-                   onFinish: updatePolarCoords,
-                   step: 1,
-               });
-            centerRotation
-              .addSlider(opts[layer].polarCoords, "angle", "percentRange",
-              {
-                  label: "Init Angle",
-                  onChange: updatePolarCoords,
-                  onFinish: updatePolarCoords,
-                  step: 1,
+                .addSlider(opts[layer].pivot, "initRotation", "percentRange",
+                {
+                    label: "Init Angle",
+                    onChange: updatePivotRotation,
+                    onFinish: updatePivotRotation,
+                    step: 1,
                 });
             centerRotation
-              .addSlider(opts[layer].pace, "center", "range",
-              {
-                label: "Pace",
-                onChange: updateAnimation,
-                onFinish: updateAnimation,
-                step: 1,
-            });
+                .addSlider(opts[layer].pivot, "orbit", "percentRange",
+                {
+                    label: "Orbit",
+                    onChange: updatePivotOrbit,
+                    onFinish: updatePivotOrbit,
+                    step: 1,
+                });
+            centerRotation
+                .addSlider(opts[layer].pivot, "pace", "paceRange",
+                {
+                    label: "Pace",
+                    onChange: updatePivotPace,
+                    onFinish: updatePivotPace,
+                    step: 1
+                });
         }
         currSettings["texture"] = opts;
         return gui;
@@ -473,8 +483,8 @@
     }
 
     function updateGui(guiContainer, originSettings, stageSettings) {
-        rescaleSettings(originSettings);
         mergeSettings(originSettings, stageSettings);
+        rescaleSettings(originSettings);
         guiContainer._panels.forEach(function(panel) {
             panel._groups.forEach(function (group) {
                 group._components.forEach(function (component) {
@@ -496,18 +506,11 @@
             if (typeof (item) !== "object") {
                 return;
             }
-            if (item.rotation) {
-                item.rotation *= rad2percents;
-            }
             if (item.initRotation) {
                 item.initRotation *= rad2percents;
             }
             if (item.scale) {
                 item.scale /= baseShapeCoeff;
-            }
-            if (item.polarCoords) {
-                item.polarCoords.angle *= rad2percents;
-                item.polarCoords.radius /= baseShapeCoeff * 0.5;
             }
         }
     }
@@ -548,14 +551,17 @@
             var currSource = source[layer];
             var currTarget = target[layer];
             for (var key in currTarget) {
-                if (!currSource.hasOwnProperty(key)) {
-                    continue;
+                if (!currSource.hasOwnProperty(key)) { continue; }
+                if (key === "pivot") {
+                    currTarget.pivot.orbit = currSource.pivot.orbit;
+                    currTarget.pivot.initRotation = currSource.pivot.initRotation;
+                    currTarget.pivot.pace = currSource.pivot.pace;
                 }
                 currTarget[key] = currSource[key];
             }
-            currTarget.pace.center = convertSpeedPace(currSource.centerSpeed);
-            currTarget.pace.local = convertSpeedPace(currSource.localSpeed);
+            currTarget.pace = convertSpeedPace(currSource.speed);
         }
+        console.log(target);
     }
 
     function convertSpeedPace(origin) {
