@@ -14,7 +14,7 @@
         transparent: true,
         width: size, 
         height: size,
-        forceCanvas: false,
+        forceCanvas: true,
     });
 
     app.renderer.backgroundColor = 0xFFFFFF;
